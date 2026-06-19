@@ -1,1 +1,39 @@
-{"name":"drive-genetic-redline","version":"0.1.0","description":"Local-first Google Drive/Docs provenance redline CLI that renders DOCX tracked changes from available API revision evidence.","type":"module","bin":{"drive-redline":"./dist/cli.js"},"scripts":{"build":"tsc -p tsconfig.json","test":"vitest run","lint":"tsc -p tsconfig.json --noEmit"},"engines":{"node":">=20"},"files":["dist","README.md"],"dependencies":{"@types/diff-match-patch":"^1.0.36","commander":"^12.1.0","diff-match-patch":"^1.0.5","google-auth-library":"^9.15.1","googleapis":"^140.0.1","jszip":"^3.10.1","p-limit":"^6.2.0","pino":"^9.5.0","xmlbuilder2":"^3.1.1","zod":"^3.24.1"},"devDependencies":{"@types/node":"^22.10.2","typescript":"^5.7.2","vitest":"^2.1.8"},"packageManager":"pnpm@9.15.0"}
+{
+  "name": "drive-genetic-redline",
+  "version": "0.1.0",
+  "description": "Local-first Google Drive/Docs provenance redline CLI that renders DOCX tracked changes from available API revision evidence.",
+  "type": "module",
+  "bin": {
+    "drive-redline": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "@types/diff-match-patch": "^1.0.36",
+    "commander": "^12.1.0",
+    "diff-match-patch": "^1.0.5",
+    "google-auth-library": "^9.15.1",
+    "googleapis": "^140.0.1",
+    "jszip": "^3.10.1",
+    "p-limit": "^6.2.0",
+    "pino": "^9.5.0",
+    "xmlbuilder2": "^3.1.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

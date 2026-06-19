@@ -1,0 +1,13 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { walk, ensureDir, writeJson } from '../fs.js';
+import { segmentsFromTexts } from '../docx/segments.js';
+import { createTrackedDocx } from '../docx/writer.js';
+import type { Snapshot } from '../types.js';
+
+async function readSnapshots(file: string): Promise<Snapshot[]> { return (await readFile(file, 'utf8')).trim().split('\n').filter(Boolean).map(l => JSON.parse(l) as Snapshot); }
+export async function renderArchive(inDir: string, mode: 'cumulative' | 'stepwise'): Promise<void> {
+  for await (const file of walk(path.join(inDir, 'documents'))) if (file.endsWith('normalized-snapshots.jsonl')) { const root = path.resolve(path.dirname(file), '..'); const snapshots = await readSnapshots(file); if (snapshots.length < 2) continue; await (mode === 'cumulative' ? renderCumulative(root, snapshots) : renderStepwise(root, snapshots)); }
+}
+async function renderCumulative(root: string, snapshots: Snapshot[]) { const first = snapshots[0], last = snapshots.at(-1)!; const segments = segmentsFromTexts(first.text, last.text, { fileId: last.fileId, fromRevisionId: first.revisionId, toRevisionId: last.revisionId, docTitle: path.basename(root), evidence: { source: 'revision-diff', confidence: 'medium', notes: ['Cumulative net diff: intermediate churn is preserved in word-events.jsonl and stepwise DOCXs.'] } }); await ensureDir(path.join(root, 'editions')); await writeFile(path.join(root, 'editions/cumulative-genetic-redline.docx'), await createTrackedDocx(segments, 'Cumulative genetic redline')); await writeJson(path.join(root, 'editions/cumulative-genetic-redline.provenance.json'), { mode: 'cumulative', baselineRevisionId: first.revisionId, targetRevisionId: last.revisionId, acceptsAllToSha256: last.sha256 }); }
+async function renderStepwise(root: string, snapshots: Snapshot[]) { const dir = path.join(root, 'editions/stepwise'); await ensureDir(dir); for (let i = 1; i < snapshots.length; i++) { const from = snapshots[i - 1], to = snapshots[i]; const stem = `${String(i).padStart(6, '0')}--${from.revisionId}-to-${to.revisionId}`.replace(/[^a-zA-Z0-9_.-]/g, '-'); const segments = segmentsFromTexts(from.text, to.text, { fileId: to.fileId, fromRevisionId: from.revisionId, toRevisionId: to.revisionId }); await writeFile(path.join(dir, `${stem}.docx`), await createTrackedDocx(segments, `Stepwise genetic redline ${i}`)); await writeJson(path.join(dir, `${stem}.provenance.json`), { mode: 'stepwise', fromRevisionId: from.revisionId, toRevisionId: to.revisionId, acceptsAllToSha256: to.sha256 }); } }

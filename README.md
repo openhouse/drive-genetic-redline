@@ -24,7 +24,7 @@ pnpm install
 pnpm build
 ```
 
-Node.js 20 or newer is required.
+Node.js 24 is required; the supported engine range is `>=24 <25`.
 
 ## CLI commands
 
@@ -122,3 +122,55 @@ Generated DOCX files include minimal WordprocessingML parts and enable revision 
 - Full formatting fidelity.
 - Editing Google Docs or accepting/rejecting suggestions in Google.
 - Uploading generated files back to Drive.
+
+## Robust harvest examples
+
+Use Node.js 24 with pnpm 9.15.0; the project intentionally targets the current local Node 24 runtime in `.nvmrc` and `package.json`.
+
+When a script records a `latest-run.txt` pointer or updates a `current` symlink, make the harvest command fail the script before writing those pointers. For example:
+
+```bash
+set -euo pipefail
+
+export MMH_FOLDER_URL='https://drive.google.com/drive/folders/0B7mhOi-bfjJnfi1pUjloZTNYU2NRTkV3MlJIam01aTc5RndsQ3diNlV1enBBZkh4ZjB1dVE'
+export MMH_ARCHIVE_ROOT='/Volumes/16TB_SSD/Work/Marmor/sources/drive/monthly-music-hackathon'
+export RUN_ID="$(date +%Y%m%d-%H%M%S)"
+export RUN="$MMH_ARCHIVE_ROOT/runs/$RUN_ID-pilot"
+mkdir -p "$RUN/_system"
+
+node dist/cli.js harvest \
+  --folder-url "$MMH_FOLDER_URL" \
+  --out "$RUN" \
+  --only-id 1s49szbYT7k_RzzbUgKB0SCtXQ6KuSxEiO-BW8ESFTnE 1j4TJ3gSyaHyJntgIjR_FexbuEUPQJ-T415CDYt8-Fxw \
+  --comments \
+  --suggestions \
+  --revisions \
+  --activity
+
+printf '%s\n' "$RUN_ID-pilot" > "$MMH_ARCHIVE_ROOT/latest-run.txt"
+ln -sfn "$RUN" "$MMH_ARCHIVE_ROOT/current"
+```
+
+For a full run that skips known sensitive documents:
+
+```bash
+set -euo pipefail
+
+export RUN_ID="$(date +%Y%m%d-%H%M%S)"
+export RUN="$MMH_ARCHIVE_ROOT/runs/$RUN_ID"
+mkdir -p "$RUN/_system"
+
+node dist/cli.js harvest \
+  --folder-url "$MMH_FOLDER_URL" \
+  --out "$RUN" \
+  --skip-id 1VDIoeupCMXI2Zi7PtIcU0HR8tD27gLMx6mUGD3psxRo 1YP_2ou3bsxk6_T-ZhyyHre6JXumlHw77A2ljjZSTTuI \
+  --comments \
+  --suggestions \
+  --revisions \
+  --activity
+
+printf '%s\n' "$RUN_ID" > "$MMH_ARCHIVE_ROOT/latest-run.txt"
+ln -sfn "$RUN" "$MMH_ARCHIVE_ROOT/current"
+```
+
+By default, `harvest` logs per-document failures to `_system/harvest-errors.jsonl` and continues with later Google Docs. Add `--fail-fast` when a pilot run should abort on the first document failure.
